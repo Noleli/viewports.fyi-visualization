@@ -1,0 +1,97 @@
+<!doctype html>
+<script webc:setup>
+const { extent } = await import("d3-array");
+const { scaleSequentialLog } = await import("d3-scale");
+const { interpolateRdYlBu } = await import("d3-scale-chromatic");
+
+const data = $data.viewports.viewports;
+data.sort((a, b) => a.count - b.count);
+</script>
+
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<title>Viewports.fyi visualized</title>
+		<style webc:keep>
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	padding: 8px;
+	display: grid;
+	grid-template-rows: auto 1fr;
+	background-color: #222;
+	color: white;
+	font-family: system-ui, sans-serif;
+}
+
+svg {
+	display: block;
+	overflow: visible;
+	height: auto;
+	max-height: 100%;
+}
+
+rect {
+	fill: none;
+	stroke-width: 1px;
+	vector-effect: non-scaling-stroke;
+}
+
+h1 {
+	margin: 0;
+}
+
+h1 a {
+	color: currentcolor;
+}
+
+fieldset {
+	border: none;
+	padding: 0;
+	margin: 0;
+	margin-block: 8px;
+}
+
+body:has(#view-fit:checked) {
+	height: 100vh;
+}
+
+body:has(#view-fit:checked) #viewports {
+	height: 100%;
+	overflow: hidden;
+}
+body:has(#view-fit:checked) svg {
+	width: 100%;
+}
+		</style>
+	</head>
+	<body>
+		<div>
+			<h1>Visualizing <a href="https://viewports.fyi">Viewports.fyi</a></h1>
+			<fieldset>
+				<label><input type="radio" name="view" id="view-fit" checked /> Fit</label>
+				<label><input type="radio" name="view" id="view-true" /> True size</label>
+			</fieldset>
+		</div>
+		<div id="viewports">
+			<script webc:type="js" webc:root>
+				const widthMax = Math.max(...data.map(d => d.width));
+				const heightMax = Math.max(...data.map(d => d.height));
+				const aspectRatio = widthMax/heightMax;
+				const colorScale = scaleSequentialLog()
+					.domain(extent(data, d => d.count))
+					.interpolator(t => interpolateRdYlBu(1 - t));
+
+				`<svg width="${widthMax}" height="${heightMax}"
+					viewBox="${`0 0 ${widthMax} ${heightMax}`}"
+					preserveAspectRatio="xMidYMin" style="aspect-ratio: ${aspectRatio}">
+					${data.map(d => `<rect width="${d.width}" height="${d.height}" stroke="${colorScale(d.count)}"></rect>`).join("\n")}
+				</svg>`;
+			</script>
+		</div>
+	</body>
+</html>
